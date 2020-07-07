@@ -24,7 +24,7 @@ struct Token{
 // パーサが読み込むトークン列
 Token *token;
 
-/ 入力プログラム
+// 入力プログラム
 char *user_input;
 
 
