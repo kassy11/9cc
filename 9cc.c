@@ -24,6 +24,10 @@ struct Token{
 // パーサが読み込むトークン列
 Token *token;
 
+/ 入力プログラム
+char *user_input;
+
+
 // エラー関数
 void error(char *fmt, ...){
     va_list ap;
@@ -106,6 +110,20 @@ Token *tokenize(char *p) {
     return head.next;
 }
 
+// エラー箇所を報告する
+void error_at(char *loc, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    int pos = loc - user_input;
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, ""); // pos個の空白を出力
+    fprintf(stderr, "^ ");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
 int main(int argc, char** argv){
     // コマンドの第1引数に直接コードを与えることにするので、
     // ダブルポインタとしてコマンドライン引数を定義する
@@ -135,3 +153,4 @@ int main(int argc, char** argv){
     printf("        ret");
     return 0;
 }
+
