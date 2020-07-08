@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 typedef enum{
     TK_RESERVED, //記号
     TK_NUM, // 数値
@@ -47,6 +48,19 @@ Token *token;
 char *user_input;
 
 
+void error_at(char *loc, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    int pos = loc - user_input;
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, ""); // pos個の空白を出力
+    fprintf(stderr, "^ ");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
 // エラー関数
 void error(char *fmt, ...){
     va_list ap;
@@ -68,7 +82,7 @@ bool consume(char op){
 // トークンが期待した値ならトークンを一つ進める
 void expect(char op){
     if(token->kind != TK_RESERVED || token->str[0] != op){
-        error("%cではありません\n", op);
+        error_at(token->str, "expected a number");
     }
     token = token->next;
 }
@@ -129,20 +143,6 @@ Token *tokenize(char *p) {
     return head.next;
 }
 
-// エラー箇所を報告する
-void error_at(char *loc, char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-
-    int pos = loc - user_input;
-    fprintf(stderr, "%s\n", user_input);
-    fprintf(stderr, "%*s", pos, ""); // pos個の空白を出力
-    fprintf(stderr, "^ ");
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-    exit(1);
-}
-
 // 2項演算子ノードを作成する
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
     Node *node = calloc(1, sizeof(Node));
@@ -198,6 +198,37 @@ Node *primary(){
     return new_node_num(expect_number());
 }
 
+void gen(Node *node) {
+    if (node->kind == ND_NUM) {
+        printf("  push %d\n", node->val);
+        return;
+    }
+
+    gen(node->lhs);
+    gen(node->rhs);
+
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+
+    switch (node->kind) {
+        case ND_ADD:
+            printf("  add rax, rdi\n");
+            break;
+        case ND_SUB:
+            printf("  sub rax, rdi\n");
+            break;
+        case ND_MUL:
+            printf("  imul rax, rdi\n");
+            break;
+        case ND_DIV:
+            printf("  cqo\n");
+            printf("  idiv rdi\n");
+            break;
+    }
+
+    printf("  push rax\n");
+}
+
 int main(int argc, char** argv){
     // コマンドの第1引数に直接コードを与えることにするので、
     // ダブルポインタとしてコマンドライン引数を定義する
@@ -205,25 +236,18 @@ int main(int argc, char** argv){
         fprintf(stderr, "引数が正しくありません。\n");
         return  1;
     }
-    token = tokenize(argv[1]);
+
+    user_input = argv[1];
+    token = tokenize(user_input);
+    Node *node = expr();
 
     printf(".intel_syntax noprefix\n");
     printf(".globl _main\n");
     printf("_main:\n");
-    // strtolは、数値を読み込んだ後、第2引数のポインタをアップデートして、読み込んだ最後の文字の次の文字を指すように値を更新
-    printf("        mov rax, %ld\n", expect_number());
 
+    gen(node);
 
-    while(!at_eof()){
-        if(consume('+')){
-            printf("  add rax, %d", expect_number());
-        }
-
-        // consume()とexpect()のちがいは？
-        expect('-');
-        printf("  sub rax, %d", expect_number());
-    }
-
+    printf("  pop rax\n");
     printf("        ret");
     return 0;
 }
