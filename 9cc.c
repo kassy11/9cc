@@ -20,6 +20,25 @@ struct Token{
     char *str;  // トークン文字列
 } ;
 
+// 抽象構文木のノードの種類
+typedef enum {
+    ND_ADD, // +
+    ND_SUB, // -
+    ND_MUL, // *
+    ND_DIV, // /
+    ND_NUM, // 整数
+} NodeKind;
+
+typedef struct Node Node;
+
+// 抽象構文木のノードの型
+struct Node {
+    NodeKind kind; // ノードの型
+    Node *lhs;     // 左辺
+    Node *rhs;     // 右辺
+    int val;       // kindがND_NUMの場合のみ使う
+};
+
 // 現在着目しているトークンの構造体を指す
 // パーサが読み込むトークン列
 Token *token;
@@ -122,6 +141,61 @@ void error_at(char *loc, char *fmt, ...) {
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
+}
+
+// 2項演算子ノードを作成する
+Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = kind;
+    node->lhs = lhs;
+    node->rhs = rhs;
+    return node;
+}
+
+// 数値ノードを作成する
+Node *new_node_num(int val){
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_NUM;
+    node->val = val;
+    return node;
+}
+
+Node *mul(){
+    Node *node =primary();
+    for(;;){
+        if(consume('*')){
+            node = new_node(ND_MUL, node, primary());
+        }else if(consume('/')){
+            node = new_node(ND_DIV, node, primary());
+        }else{
+            return node;
+        }
+    }
+}
+
+Node *expr(){
+    Node *node = mul();
+    for(;;){
+        if(consume('+')){
+            // 入力ストリームの次のトークンが引数とマッチするときに、入力を1トークン読み進めて真を返す関数
+            node = new_node(ND_ADD, node, mul());
+            // 左結合する
+        }else if(consume('-')){
+            node = new_node(ND_SUB, node, mul());
+        }else{
+            return node;
+        }
+    }
+}
+
+Node *primary(){
+    if(consume('(')){
+        Node *node = expr();
+        expect(')');
+        return node;
+    }
+
+    return new_node_num(expect_number());
 }
 
 int main(int argc, char** argv){
