@@ -167,6 +167,7 @@ Node *new_num(int val) {
 Node *expr();
 Node *mul();
 Node *primary();
+Node *unary();
 
 // expr = mul ("+" mul | "-" mul)*
 Node *expr() {
@@ -182,17 +183,29 @@ Node *expr() {
     }
 }
 
-// mul = primary ("*" primary | "/" primary)*
+// mul = unary("*" unary | "/" unary)*
 Node *mul() {
-    Node *node = primary();
+    Node *node = unary();
 
     for (;;) {
         if (consume('*'))
-            node = new_binary(ND_MUL, node, primary());
+            node = new_binary(ND_MUL, node, unary());
         else if (consume('/'))
-            node = new_binary(ND_DIV, node, primary());
+            node = new_binary(ND_DIV, node, unary());
         else
             return node;
+    }
+}
+
+// unary = ("+" | "-")? unary
+//       | primary
+Node *unary(){
+    if(consume('+')){
+        return unary();
+    }else if(consume('-')){
+        return new_binary(ND_SUB, new_num(0), unary());
+    }else{
+        return primary();
     }
 }
 
@@ -206,6 +219,8 @@ Node *primary() {
 
     return new_num(expect_number());
 }
+
+
 
 //
 // Code generator
