@@ -108,6 +108,7 @@ Token *tokenize(){
     Token head; // ダミーヘッダー
     head.next = NULL;
     Token *cur = &head;
+
     while(*p){
         // 空白文字はスキップ
         if(isspace(*p)){
@@ -115,7 +116,7 @@ Token *tokenize(){
             continue;
         }
 
-        if(*p == '+' || *p == '-'){
+        if(strchr("+-*/()", *p)){
             // curがどんどん更新されていく
             cur = new_token(TK_RESERVED, cur, p++);
             // ここはpを関数に渡してからインクリメント
@@ -234,7 +235,7 @@ void gen(Node *node){
     gen(node->rhs);
 
     printf("  pop rdi\n");
-    printf("  pop tax\n");
+    printf("  pop rax\n");
 
     switch (node->kind) {
         case ND_ADD:
@@ -268,18 +269,16 @@ int main(int argc, char **argv){
     token = tokenize();
     // グローバル変数名なので、consume()やexpect_number()に引数として渡さなくていい
 
+    Node *node = expr();
+
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
 
-    printf("  mov rax, %d\n", expect_number());
-    while(!at_eof()){
-        if(consume('+')){
-            printf("  add rax, %d\n", expect_number());
-        }else if(consume('-')){
-            printf("  sub rax, %d\n", expect_number());
-        }
-    }
+    gen(node);
+
+    // 最後のスタックトップからのロード
+    printf("  pop rax\n");
     printf("  ret\n");
     return 0;
 }
