@@ -43,12 +43,12 @@ void error_at(char *loc, char *fmt, ...){
     va_start(ap, fmt);
 
     // 入力の先頭との差を取ることでエラー箇所を検出する
-    // TODO:ここも理解できてない
+    // 指定位置のポインター先頭要素へのポインタ
     int pos = loc - user_input;
     fprintf(stderr, "%s\n", user_input);
     fprintf(stderr, "%*s", pos, ""); // エラー箇所個までの空白を出力
     fprintf(stderr, "^ ");
-    vfprintf(stderr, fmt, ap);
+    vfprintf(stderr, fmt, ap); // 引数で受け取ったエラー文
     fprintf(stderr, "\n");
     exit(1);
 }
@@ -64,7 +64,7 @@ bool consume(char op){
     return true;
 }
 
-// エラーを検出する方
+// エラーを検出する方、期待された値なら次へ進める
 void expect(char op){
     if(token->kind != TK_RESERVED || token->str[0] != op){
         error_at(token->str, "expected '%c'", op);
@@ -79,6 +79,7 @@ int expect_number(){
         error_at(token->str, "数ではありません\n");
     }
     int val = token->val;
+    // グローバル変数のtokenの連結リストを進める
     token = token->next;
     return val;
 }
@@ -104,7 +105,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str){
 // TODO:連結リストの復習
 Token *tokenize(){
     char *p = user_input;
-    Token head;
+    Token head; // ダミーヘッダー
     head.next = NULL;
     Token *cur = &head;
     while(*p){
@@ -115,12 +116,16 @@ Token *tokenize(){
         }
 
         if(*p == '+' || *p == '-'){
-            // TODO:ここのp++が理解できない
+            // curがどんどん更新されていく
             cur = new_token(TK_RESERVED, cur, p++);
+            // ここはpを関数に渡してからインクリメント
+            // new_token(TK_RESERVED, cur, p++); p++; と同じ意味
         }else if(isdigit(*p)){
             // 10進数の数値かどうか
             cur = new_token(TK_NUM, cur, p);
             cur->val = strtol(p, &p, 10);
+            // strtol()はポインタから数値を読み込んで、ポインタを一つ進める
+            // よってp++;の処理は不要
             continue;
         }else{
             error_at(p, "トークンが正しくありません\n");
@@ -129,6 +134,87 @@ Token *tokenize(){
     new_token(TK_EOF, cur, p);
     return head.next;
 }
+
+// 抽象構文木のノードの種類
+typedef enum{
+    ND_ADD,
+    ND_SUB,
+    ND_MUL,
+    ND_DIV,
+    ND_NUM
+} NodeKind;
+
+typedef struct Node Node;
+
+// 抽象構文木のノードの型
+struct Node{
+    NodeKind kind;
+    Node *lhs;
+    Node *rhs;
+    int val;
+};
+
+// ２項演算子のノードの生成
+Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = kind; // 演算子のどれか
+    node->rhs = rhs;
+    node->lhs = lhs;
+    return node;
+}
+
+// 数値のノードの生成
+Node *new_node_num(int val){
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_NUM;
+    node->val = val;
+    return node;
+}
+
+Node *expr();
+Node *mul();
+Node *primary();
+
+// 構文木をnodeから生成する（パーサ）
+// expr = mul ("+" mul | "-" mul)*という生成規則と対応
+Node *expr(){
+    Node *node = mul();
+
+    for(;;){
+        if(consume('+')){
+            // 現在の着目トークンが+なら
+            node = new_node(ND_ADD, node, mul());
+        }else if(consume('-')){
+            node = new_node(ND_SUB, node, mul());
+        }else{
+            return node;
+        }
+    }
+}
+
+// mul = primary ( "*" primary | "/" primary)*という生成規則と対応
+Node *mul(){
+    Node *node = primary();
+    if(consume('*')){
+        node = new_node(ND_MUL, node, primary());
+    }else if(consume('/')){
+        node = new_node(ND_DIV, node, primary());
+    }else{
+        return node;
+    }
+}
+
+// primary = "(" expr ")" | num
+Node *primary(){
+    if(consume('(')){
+        Node *node = expr();
+        expect(')');
+        return node;
+    }else{
+        return expect_number();
+    }
+}
+
 
 int main(int argc, char **argv){
     if(argc != 2){
