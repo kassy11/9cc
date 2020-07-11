@@ -176,8 +176,11 @@ Node *mul();
 Node *primary();
 
 // 構文木をnodeから生成する（パーサ）
+// TODO:ここのパースされる流れを理解できてない
+
 // expr = mul ("+" mul | "-" mul)*という生成規則と対応
 Node *expr(){
+    // 一回目だけ明示的にmul()まで掘られる
     Node *node = mul();
 
     for(;;){
@@ -194,14 +197,18 @@ Node *expr(){
 
 // mul = primary ( "*" primary | "/" primary)*という生成規則と対応
 Node *mul(){
+    // １回目だけ明示的にprimary()まで掘られる
     Node *node = primary();
-    if(consume('*')){
-        node = new_node(ND_MUL, node, primary());
-    }else if(consume('/')){
-        node = new_node(ND_DIV, node, primary());
-    }else{
-        return node;
+    for(;;){
+        if(consume('*')){
+            node = new_node(ND_MUL, node, primary());
+        }else if(consume('/')){
+            node = new_node(ND_DIV, node, primary());
+        }else{
+            return node;
+        }
     }
+
 }
 
 // primary = "(" expr ")" | num
@@ -211,10 +218,42 @@ Node *primary(){
         expect(')');
         return node;
     }else{
-        return expect_number();
+        return new_node_num(expect_number());
     }
 }
 
+// 生成された構文木からスタックマシンを構築して、アセンブリを出力する関数
+void gen(Node *node){
+    if(node->kind == ND_NUM){
+        printf("  push %d\n", node->val);
+        return;
+    }
+
+    // in-order
+    gen(node->lhs);
+    gen(node->rhs);
+
+    printf("  pop rdi\n");
+    printf("  pop tax\n");
+
+    switch (node->kind) {
+        case ND_ADD:
+            printf("  add rax, rdi\n");
+            break;
+        case ND_SUB:
+            printf("  sub rax, rdi\n");
+            break;
+        case ND_MUL:
+            printf("  imul rax, rdi\n");
+            break;
+        case ND_DIV:
+            printf("  cqo\n");
+            printf("  idiv rdi\n");
+            break;
+    }
+
+    printf("  push rax\n");
+}
 
 int main(int argc, char **argv){
     if(argc != 2){
