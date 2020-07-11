@@ -175,11 +175,11 @@ Node *new_node_num(int val){
 Node *expr();
 Node *mul();
 Node *primary();
+Node *unary();
 
 // 構文木をnodeから生成する（パーサ）
 // TODO:ここのパースされる流れを理解できてない
 
-// expr = mul ("+" mul | "-" mul)*という生成規則と対応
 Node *expr(){
     // 一回目だけ明示的にmul()まで掘られる
     Node *node = mul();
@@ -196,15 +196,14 @@ Node *expr(){
     }
 }
 
-// mul = primary ( "*" primary | "/" primary)*という生成規則と対応
 Node *mul(){
     // １回目だけ明示的にprimary()まで掘られる
-    Node *node = primary();
+    Node *node = unary();
     for(;;){
         if(consume('*')){
-            node = new_node(ND_MUL, node, primary());
+            node = new_node(ND_MUL, node, unary());
         }else if(consume('/')){
-            node = new_node(ND_DIV, node, primary());
+            node = new_node(ND_DIV, node, unary());
         }else{
             return node;
         }
@@ -212,7 +211,15 @@ Node *mul(){
 
 }
 
-// primary = "(" expr ")" | num
+Node *unary(){
+    if(consume('+')){
+        return unary();
+    }else if(consume('-')){
+        return new_node(ND_SUB, new_node_num(0), unary());
+    }
+    return primary();
+}
+
 Node *primary(){
     if(consume('(')){
         Node *node = expr();
