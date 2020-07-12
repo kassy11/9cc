@@ -3,4 +3,4 @@ project(9cc C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(9cc main.c container.c 9cc.h parse.c codegen.c test.c)
+add_executable(9cc main.c container.c 9cc.h parse.c codegen.c tokenize.c)

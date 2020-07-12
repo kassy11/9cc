@@ -1,10 +1,85 @@
-//
-// Created by Kotaro Kashihara on 2020/07/12.
-//
+
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 
 #ifndef INC_9CC_9CC_H
 #define INC_9CC_9CC_H
+// トークンの種類
+typedef enum {
+    TK_RESERVED, // 記号
+    TK_NUM,      // 整数
+    TK_EOF,      // トークン列の終わりを表す特別な型：コンパイラのときは必要
+} TokenKind;
+
+// トークンの情報を格納する構造体
+typedef struct Token Token;
+struct Token{
+    TokenKind kind;
+    Token *next;
+    int val;
+    char *str;
+    int len;
+};
 
 
+// 抽象構文木のノードの種類
+typedef enum{
+    ND_ADD,
+    ND_SUB,
+    ND_MUL,
+    ND_DIV,
+    ND_EQ,
+    ND_NE,
+    ND_LT,
+    ND_LE,
+    ND_NUM
+} NodeKind;
+
+typedef struct Node Node;
+
+// 抽象構文木のノードの型
+struct Node{
+    NodeKind kind;
+    Node *lhs;
+    Node *rhs;
+    int val;
+};
+
+extern char *user_input;
+extern Token *token;
+
+
+void error(char *fmt, ...);
+void error_at(char *loc, char *fmt, ...);
+bool consume(char *op);
+void expect(char *op);
+int expect_number();
+bool at_eof();
+Token *new_token(TokenKind kind, Token *cur, char *str, int len);
+bool startswith(char *p, char *q);
+Token *tokenize();
+Node *new_node(NodeKind kind);
+Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
+Node *new_num(int val);
+
+
+Node *expr();
+Node *equality();
+Node *relational();
+Node *add();
+Node *mul();
+Node *primary();
+Node *unary();
+
+void gen(Node *node);
 
 #endif //INC_9CC_9CC_H
