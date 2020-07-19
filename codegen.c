@@ -9,7 +9,8 @@ void gen(Node *node){
         return;
     }
 
-    // in-order
+    // post-order（帰りがけ順）
+    // 非部分木（数値）→右部分木（数値）→根（演算子）
     gen(node->lhs);
     gen(node->rhs);
 

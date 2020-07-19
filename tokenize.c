@@ -80,6 +80,7 @@ Token *tokenize(){
             continue;
         }
 
+        // strchr()で、"+-*/()<>"から*pを検索してそれ以降のアドレスを返す
         if(strchr("+-*/()<>", *p)){
             // curがどんどん更新されていく
             cur = new_token(TK_RESERVED, cur, p++, 1);
@@ -91,11 +92,11 @@ Token *tokenize(){
             cur = new_token(TK_NUM, cur, p, 0);
             char *q = p;
             cur->val = strtol(p, &p, 10);
-            // strtol()はポインタから数値を読み込んで、ポインタを一つ進める
+            // strtol()はポインタから数値を読み込んで、ポインタを一つ進める（次の数値の文字列を読み込む）
             // よってp++;の処理は不要
 
-            // 数字の桁数?
-            // TODO:どう意味があるのか分かってない
+            // 数字の桁数を
+            // すべてのトークンのlenを管理しているので
             cur->len = p-q;
             continue;
         }else{

@@ -22,15 +22,17 @@ int main(int argc, char **argv){
     token = tokenize();
     // グローバル変数名なので、consume()やexpect_number()に引数として渡さなくていい
 
+    // 上記でトークナイズしたトークン列から構文木を
     Node *node = expr();
 
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
 
+    // 作成した構文木から木を降りながら再帰的にアセンブリを生成する
     gen(node);
 
-    // 最後のスタックトップからのロード
+    // 最後のスタックトップに残っている全体の計算結果をraxにロードして終了
     printf("  pop rax\n");
     printf("  ret\n");
     return 0;
