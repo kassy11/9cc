@@ -99,6 +99,11 @@ Token *tokenize(){
             // すべてのトークンのlenを管理しているので
             cur->len = p-q;
             continue;
+        }else if ('a'<= *p && *p <= 'z'){
+            // とりあえずここでは小文字１文字の変数に限定する
+            cur = new_token(TK_IDENT, cur, p++, 1);
+//            cur->len = 1;
+            continue;
         }else{
             error_at(p, "トークンが正しくありません\n");
         }
@@ -108,24 +113,3 @@ Token *tokenize(){
 }
 
 
-// ノード生成の共通処理
-Node *new_node(NodeKind kind){
-    Node *node = calloc(1, sizeof(Node));
-    node->kind = kind; // 演算子のどれか
-    return node;
-}
-
-// ２項演算子のノードの生成
-Node *new_binary(NodeKind kind, Node *lhs, Node *rhs){
-    Node *node = new_node(kind);
-    node->lhs = lhs;
-    node->rhs = rhs;
-    return node;
-}
-
-// 数値のノードの生成
-Node *new_num(int val){
-    Node *node = new_node(ND_NUM);
-    node->val = val;
-    return node;
-}

@@ -1,7 +1,85 @@
 #include "9cc.h"
 
+// ノード生成の共通処理
+Node *new_node(NodeKind kind){
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = kind; // 演算子のどれか
+    return node;
+}
+
+// ２項演算子のノードの生成
+Node *new_binary(NodeKind kind, Node *lhs, Node *rhs){
+    Node *node = new_node(kind);
+    node->lhs = lhs;
+    node->rhs = rhs;
+    return node;
+}
+
+// 数値のノードの生成
+Node *new_num(int val){
+    Node *node = new_node(ND_NUM);
+    node->val = val;
+    return node;
+}
+
+// 次のトークンがTOKEN_IDENTのときはそれを返して、次に進める
+Token *consume_ident(){
+    if(token->kind == TK_IDENT){
+        Token *tok = token;
+        token = token->next;
+        return tok;
+    }
+    return NULL;
+}
+
+/* パーサの生成規則
+program    = stmt*
+stmt       = expr ";"
+expr       = assign
+assign     = equality ("=" assign)?
+equality   = relational ("==" relational | "!=" relational)*
+relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+add        = mul ("+" mul | "-" mul)*
+mul        = unary ("*" unary | "/" unary)*
+unary      = ("+" | "-")? primary
+primary    = num | ident | "(" expr ")"
+*/
+
+
+// ポインタの配列
+Node *code[100];
+
+// program = stmt*
+void program(){
+    int i = 0;
+    while(!at_eof()){
+        // ポインタの配列に、プログラム自体の「文」の先頭ポインタを格納する
+        code[i++] = stmt();
+    }
+    // NULLを入れておくと末尾がわかりやすい
+    code[i] = NULL;
+}
+
+// stmt = expr ";"
+Node *stmt(){
+    Node *node = expr();
+    expect(";");
+    return node;
+}
+
+// expr = assign
 Node *expr(){
-    return equality();
+    return assign();
+}
+
+// assign = equality ("=" assign)?
+Node *assign(){
+    Node *node = equality();
+
+    if(consume("=")){
+        node = new_binary(ND_ASSIGN, node, assign());
+    }
+    return node;
 }
 
 // どれも最左の演算子は無限ループに入る前に定義する
@@ -83,7 +161,15 @@ Node *primary(){
         Node *node = expr();
         expect(")");
         return node;
-    }else{
-        return new_num(expect_number());
     }
+
+    Token *tok = consume_ident();
+    if (tok) {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_LVAR;
+        node->offset = (tok->str[0] - 'a' + 1) * 8;
+        return node;
+    }
+
+    return new_num(expect_number());
 }
