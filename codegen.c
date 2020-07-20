@@ -2,11 +2,37 @@
 
 #include "9cc.h"
 
+// 式を左辺値として評価する関数
+// ノードが変数のときはその変数のアドレスを計算してスタックにプッシュする
+void gen_lval(Node *node){
+    if(node->kind != ND_LVAR){
+        error("代入の左辺値が変数ではありません\n");
+    }
+
+    printf("  mov rax, rsp\n");
+    printf("  sub rax, %d\n", node->offset);
+    printf("  push rax\n");
+}
+
 // 生成された構文木からスタックマシンを構築して、アセンブリを出力する関数
 void gen(Node *node){
-    if(node->kind == ND_NUM){
-        printf("  push %d\n", node->val);
-        return;
+    switch (node->kind) {
+        case ND_NUM:
+            printf("  push %d\n");
+            return;
+        case ND_LVAR:
+            gen_lval(node);
+            printf("  pop rax\n");
+            printf("  mov rax, [rax]\n");
+            printf("  push rax\n");
+            return;
+        case ND_ASSIGN:
+            gen_lval(node->lhs);
+            printf("  pop rdi\n");
+            printf("  pop rax\n");
+            printf("  mov [rax], rdi\n");
+            printf("  push rdi\n");
+            return;
     }
 
     // post-order（帰りがけ順）
@@ -18,16 +44,16 @@ void gen(Node *node){
     printf("  pop rax\n");
 
     switch (node->kind) {
-        case ND_ADD:
+        case '+':
             printf("  add rax, rdi\n");
             break;
-        case ND_SUB:
+        case '-':
             printf("  sub rax, rdi\n");
             break;
-        case ND_MUL:
+        case '*':
             printf("  imul rax, rdi\n");
             break;
-        case ND_DIV:
+        case '/':
             printf("  cqo\n");
             printf("  idiv rdi\n");
             break;
