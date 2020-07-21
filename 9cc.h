@@ -61,7 +61,8 @@ struct Node{
 
 extern char *user_input;
 extern Token *token;
-
+// ポインタの配列
+extern Node *code[100];
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
@@ -90,5 +91,6 @@ Node *stmt();
 void program();
 
 void gen(Node *node);
+void gen_lval(Node *node);
 
 #endif //INC_9CC_9CC_H

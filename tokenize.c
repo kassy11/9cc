@@ -81,7 +81,7 @@ Token *tokenize(){
         }
 
         // strchr()で、"+-*/()<>"から*pを検索してそれ以降のアドレスを返す
-        if(strchr("+-*/()<>", *p)){
+        if(strchr("+-*/()<>;=", *p)){
             // curがどんどん更新されていく
             cur = new_token(TK_RESERVED, cur, p++, 1);
             // ここはpを関数に渡してからインクリメント
@@ -102,7 +102,7 @@ Token *tokenize(){
         }else if ('a'<= *p && *p <= 'z'){
             // とりあえずここでは小文字１文字の変数に限定する
             cur = new_token(TK_IDENT, cur, p++, 1);
-//            cur->len = 1;
+            // cur->len = 1;
             continue;
         }else{
             error_at(p, "トークンが正しくありません\n");

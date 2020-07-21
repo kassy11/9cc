@@ -46,9 +46,6 @@ primary    = num | ident | "(" expr ")"
 */
 
 
-// ポインタの配列
-Node *code[100];
-
 // program = stmt*
 void program(){
     int i = 0;
