@@ -153,8 +153,8 @@ Node *unary(){
     return primary();
 }
 
-Node *primary(){
-    if(consume("(")){
+Node *primary() {
+    if (consume("(")) {
         Node *node = expr();
         expect(")");
         return node;

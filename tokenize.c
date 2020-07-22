@@ -102,7 +102,7 @@ Token *tokenize(){
         }else if ('a'<= *p && *p <= 'z'){
             // とりあえずここでは小文字１文字の変数に限定する
             cur = new_token(TK_IDENT, cur, p++, 1);
-            // cur->len = 1;
+            cur->len = 1;
             continue;
         }else{
             error_at(p, "トークンが正しくありません\n");

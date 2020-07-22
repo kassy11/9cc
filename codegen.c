@@ -4,12 +4,12 @@
 
 // 式を左辺値として評価する関数
 // ノードが変数のときはその変数のアドレスを計算してスタックにプッシュする
-void gen_lval(Node *node){
-    if(node->kind != ND_LVAR){
+void gen_lval(Node *node) {
+    if (node->kind != ND_LVAR) {
         error("代入の左辺値が変数ではありません\n");
     }
 
-    printf("  mov rax, rsp\n");
+    printf("  mov rax, rbp\n");
     printf("  sub rax, %d\n", node->offset);
     printf("  push rax\n");
 }
@@ -28,6 +28,7 @@ void gen(Node *node){
             return;
         case ND_ASSIGN:
             gen_lval(node->lhs);
+            gen(node->rhs);
             printf("  pop rdi\n");
             printf("  pop rax\n");
             printf("  mov [rax], rdi\n");
