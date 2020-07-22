@@ -31,6 +31,22 @@ struct Token{
     int len;
 };
 
+// 変数は連結リストで表すことにする
+// LVarという構造体で一つの変数を表すことにして、先頭の要素をlocalsというポインタで持つ
+
+typedef struct LVar LVar;
+
+// ローカル変数の型
+struct LVar {
+    LVar *next; // 次の変数かNULL
+    char *name; // 変数の名前
+    int len;    // 名前の長さ
+    int offset; // RBPからのオフセット
+};
+
+// ローカル変数
+extern LVar *locals;
+
 
 // 抽象構文木のノードの種類
 typedef enum{
@@ -77,9 +93,12 @@ Node *new_node(NodeKind kind);
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_num(int val);
 Token *consume_ident();
+LVar *find_lvar(Token *tok);
+bool is_plpha (char c);
+bool is_alnum (char c);
 
 
-Node *expr();
+        Node *expr();
 Node *equality();
 Node *relational();
 Node *add();

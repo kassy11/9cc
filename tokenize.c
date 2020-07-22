@@ -14,6 +14,8 @@ bool consume(char *op){
     return true;
 }
 
+
+
 // エラーを検出する方、期待された値なら次へ進める
 void expect(char *op){
     if(token->kind != TK_RESERVED || strlen(op) != token->len ||
@@ -39,6 +41,15 @@ int expect_number(){
 bool at_eof(){
     return token->kind == TK_EOF;
 }
+
+bool is_plpha (char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
+}
+
+bool is_alnum (char c) {
+    return is_plpha(c) || ('0' <= c && c <= '9');
+}
+
 
 // 新しいトークンを作成して元のトークンにつなげる
 // 最後の連結リストにあるトークンを返す
@@ -99,11 +110,12 @@ Token *tokenize(){
             // すべてのトークンのlenを管理しているので
             cur->len = p-q;
             continue;
-        }else if ('a'<= *p && *p <= 'z'){
-            // とりあえずここでは小文字１文字の変数に限定する
-            cur = new_token(TK_IDENT, cur, p++, 1);
-            cur->len = 1;
-            continue;
+        }else if (is_plpha(*p)) {
+            char *q = p++;
+            while (is_alnum(*p)){
+                p++;
+            }
+            cur = new_token(TK_IDENT, cur, q, p - q);
         }else{
             error_at(p, "トークンが正しくありません\n");
         }

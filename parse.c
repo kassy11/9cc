@@ -1,5 +1,7 @@
 #include "9cc.h"
 
+LVar *locals;
+
 // ノード生成の共通処理
 Node *new_node(NodeKind kind){
     Node *node = calloc(1, sizeof(Node));
@@ -32,6 +34,15 @@ Token *consume_ident(){
     return NULL;
 }
 
+// 変数を名前で検索する。見つからなかった場合はNULLを返す。
+// 既存の変数なら同じオフセットを返す
+LVar *find_lvar(Token *tok) {
+    for (LVar *var = locals; var; var = var->next)
+        if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
+            return var;
+    return NULL;
+}
+
 /* パーサの生成規則
 program    = stmt*
 stmt       = expr ";"
@@ -48,6 +59,8 @@ primary    = num | ident | "(" expr ")"
 
 // program = stmt*
 void program(){
+    locals = calloc(1, sizeof(LVar));
+
     int i = 0;
     while(!at_eof()){
         // ポインタの配列に、プログラム自体の「文」の先頭ポインタを格納する
@@ -164,7 +177,19 @@ Node *primary() {
     if (tok) {
         Node *node = calloc(1, sizeof(Node));
         node->kind = ND_LVAR;
-        node->offset = (tok->str[0] - 'a' + 1) * 8;
+
+        LVar *lvar = find_lvar(tok);
+        if (lvar) {
+            node->offset = lvar->offset;
+        } else {
+            lvar = calloc(1, sizeof(LVar));
+            lvar->next = locals;
+            lvar->name = tok->str;
+            lvar->len = tok->len;
+            lvar->offset = locals->offset + 8;
+            node->offset = lvar->offset;
+            locals = lvar;
+        }
         return node;
     }
 

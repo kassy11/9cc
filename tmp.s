@@ -4,16 +4,16 @@ main:
   push rbp
   mov rbp, rsp
   sub rsp, 208
-  push 5
-  push 9
-  push 6
+  push 0
+  push 10
   pop rdi
   pop rax
   sub rax, rdi
   push rax
+  push 20
   pop rdi
   pop rax
-  imul rax, rdi
+  add rax, rdi
   push rax
   pop rax
   mov rsp, rbp

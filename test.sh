@@ -16,6 +16,8 @@ assert() {
   fi
 }
 
+
+assert 5 'ab_cd_e139931_003=3; jfioejaoie = 5;'
 assert 4 'a=1;b=2;c=a+b;z=c+a;'
 
 assert 0 '0;'
