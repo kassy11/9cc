@@ -16,6 +16,9 @@ assert() {
   fi
 }
 
+assert 10 'return 10;'
+assert 10 'return 10;return 20;'
+assert 10 'returnhoge = 10; return returnhoge;';
 
 assert 5 'ab_cd_e139931_003=3; jfioejaoie = 5;'
 assert 4 'a=1;b=2;c=a+b;z=c+a;'

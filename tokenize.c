@@ -79,55 +79,45 @@ Token *tokenize(){
     head.next = NULL;
     Token *cur = &head;
 
-    while(*p){
-        // 空白文字はスキップ
-        if(isspace(*p)){
+    while (*p) {
+        if (isspace(*p)) {
+            p++;
+            continue;
+        }
+        if (isdigit(*p)) {
+            char *q = p;
+            cur = new_token(TK_NUM, cur, p, 0);
+            cur->val = strtol(p, &p, 10);
+            cur->len = p - q;
+            continue;
+        }
+        if (startswith(p, "==") || startswith(p, "!=") || startswith(p, "<=") || startswith(p, ">=")) {
+            cur = new_token(TK_RESERVED, cur, p, 2);
+            p += 2;
+            continue;
+        }
+        if (strchr("+-*/()<>;=", *p)) {
+            cur = new_token(TK_RESERVED, cur, p, 1);
+            cur->val = *p;
             p++;
             continue;
         }
 
-        if(startswith(p, "==")|| startswith(p, "!=")||
-           startswith(p, "<=") || startswith(p, ">=")){
-            cur = new_token(TK_RESERVED, cur, p, 2);
-            p+=2;
-            continue;
-        }
-
-        // strchr()で、"+-*/()<>"から*pを検索してそれ以降のアドレスを返す
-        if(strchr("+-*/()<>;=", *p)){
-            // curがどんどん更新されていく
-            cur = new_token(TK_RESERVED, cur, p++, 1);
-            // ここはpを関数に渡してからインクリメント
-            // new_token(TK_RESERVED, cur, p++); p++; と同じ意味
-            continue;
-        }else if(isdigit(*p)){
-            // 10進数の数値かどうか
-            cur = new_token(TK_NUM, cur, p, 0);
-            char *q = p;
-            cur->val = strtol(p, &p, 10);
-            // strtol()はポインタから数値を読み込んで、ポインタを一つ進める（次の数値の文字列を読み込む）
-            // よってp++;の処理は不要
-
-            // 数字の桁数を
-            // すべてのトークンのlenを管理しているので
-            cur->len = p-q;
-            continue;
-        }else if (is_plpha(*p)) {
-            char *q = p++;
-            while (is_alnum(*p)){
-                p++;
-            }
-            cur = new_token(TK_IDENT, cur, q, p - q);
-        }else if (strncmp(p, "return", 6) == 0 && !is_plpha(p[6])){
-            tokens[i].ty = TK_RETURN;
-            tokens[i].str = p;
-            i++;
+        if (startswith(p, "return") && !is_plpha(p[6])) {
+            cur = new_token(TK_RESERVED, cur, p, 6);
             p += 6;
             continue;
         }
-        else{
-            error_at(p, "トークンが正しくありません\n");
+
+        if (is_alnum(*p)) {
+            char *q = p++;
+            while(is_alnum(*p))
+                p++;
+            cur = new_token(TK_IDENT, cur, q, p - q);
+            continue;
         }
+
+        error_at(p, "予期しない文字列です");
     }
     new_token(TK_EOF, cur, p, 0);
     return head.next;

@@ -74,7 +74,7 @@ void program(){
 // stmt = expr ";"
 Node *stmt(){
     Node *node;
-    if (consume(TK_RETURN)) {
+    if (consume("return")) {
         node = calloc(1, sizeof(Node));
         node->kind = ND_RETURN;
         node->lhs = expr();
@@ -82,8 +82,7 @@ Node *stmt(){
         node = expr();
     }
 
-    if (!consume(';'))
-        error_at(tokens[pos].str, "';'ではないトークンです");
+    expect(";");
     return node;
 }
 
