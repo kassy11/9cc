@@ -19,6 +19,9 @@ typedef enum {
     TK_IDENT,    // 識別子（変数名）
     TK_NUM,      // 整数
     TK_EOF,      // トークン列の終わりを表す特別な型：コンパイラのときは必要
+    TK_RETURN, // returnのトークン
+    TK_WHILE, // whileのトークン
+    TK_INT
 } TokenKind;
 
 // トークンの情報を格納する構造体
@@ -60,7 +63,8 @@ typedef enum{
     ND_LE,
     ND_NUM,
     ND_ASSIGN,
-    ND_LVAR
+    ND_LVAR,
+    ND_RETURN
 } NodeKind;
 
 typedef struct Node Node;

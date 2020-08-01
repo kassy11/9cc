@@ -16,6 +16,8 @@ void gen_lval(Node *node) {
 
 // 生成された構文木からスタックマシンを構築して、アセンブリを出力する関数
 void gen(Node *node){
+
+    // 左辺値
     switch (node->kind) {
         case ND_NUM:
             printf("  push %d\n", node->val);
@@ -34,6 +36,14 @@ void gen(Node *node){
             printf("  mov [rax], rdi\n");
             printf("  push rdi\n");
             return;
+        case ND_RETURN:
+            // ここのgenでreturnの返り値の右辺値のアセンブリが出力される
+            gen(node->lhs);
+            printf("  pop rax\n");
+            printf("  mov rsp, rbp\n");
+            printf("  pop rbp\n");
+            printf("  ret\n");
+            return;
     }
 
     // post-order（帰りがけ順）
@@ -44,6 +54,7 @@ void gen(Node *node){
     printf("  pop rdi\n");
     printf("  pop rax\n");
 
+    // 右辺値
     switch (node->kind) {
         case ND_ADD:
             printf("  add rax, rdi\n");

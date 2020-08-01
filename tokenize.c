@@ -42,10 +42,12 @@ bool at_eof(){
     return token->kind == TK_EOF;
 }
 
+// 与えられた文字がトークンを構成する文字かどうかを判定
 bool is_plpha (char c) {
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
 }
 
+// 数値も含めたis_plpha
 bool is_alnum (char c) {
     return is_plpha(c) || ('0' <= c && c <= '9');
 }
@@ -116,7 +118,14 @@ Token *tokenize(){
                 p++;
             }
             cur = new_token(TK_IDENT, cur, q, p - q);
-        }else{
+        }else if (strncmp(p, "return", 6) == 0 && !is_plpha(p[6])){
+            tokens[i].ty = TK_RETURN;
+            tokens[i].str = p;
+            i++;
+            p += 6;
+            continue;
+        }
+        else{
             error_at(p, "トークンが正しくありません\n");
         }
     }
